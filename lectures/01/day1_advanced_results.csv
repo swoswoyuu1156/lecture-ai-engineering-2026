@@ -1,0 +1,9 @@
+﻿model,question,trial,status,elapsed_seconds,input_tokens,output_tokens
+gemini-3.5-flash-lite,LoRA,1,成功,6.107,7,548
+gemini-3.5-flash-lite,LoRA,2,成功,3.521,7,559
+gemini-3.5-flash-lite,講座固有,1,成功,5.128,21,525
+gemini-3.5-flash-lite,講座固有,2,成功,3.796,21,464
+gemini-3.6-flash,LoRA,1,取得失敗（終了コード1）,5.159,,
+gemini-3.6-flash,LoRA,2,成功,12.931,7,788
+gemini-3.6-flash,講座固有,1,成功,14.55,21,673
+gemini-3.6-flash,講座固有,2,成功,11.472,21,531
