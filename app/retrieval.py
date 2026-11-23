@@ -186,6 +186,64 @@ def search_graph(query: str) -> dict:
 
 
 
+
+def search_graph_multi(queries: list[str]) -> dict:
+    """複数の観点でGraph検索し、取得ページを統合・重複排除する。"""
+    if not isinstance(queries, list):
+        raise ValueError("queriesには検索語のリストを指定してください。")
+
+    cleaned = []
+    for query in queries:
+        if not isinstance(query, str) or not query.strip():
+            raise ValueError("空ではない検索語を指定してください。")
+        query = query.strip()
+        if query not in cleaned:
+            cleaned.append(query)
+
+    if len(cleaned) != 2:
+        raise ValueError("異なる2つの検索観点を指定してください。")
+
+    merged = {}
+    query_results = []
+
+    for query in cleaned:
+        result = search_graph(query)
+        page_ids = []
+
+        # 各観点から入口3ページと追加候補2ページを取得する。
+        for role, items in (
+            ("seed", result["seeds"][:3]),
+            ("expanded", result["expanded"][:2]),
+        ):
+            for item in items:
+                page_id = item["page_id"]
+                if page_id not in page_ids:
+                    page_ids.append(page_id)
+
+                if page_id not in merged:
+                    merged[page_id] = {
+                        **item,
+                        "matched_queries": [query],
+                        "roles": [role],
+                    }
+                else:
+                    if query not in merged[page_id]["matched_queries"]:
+                        merged[page_id]["matched_queries"].append(query)
+                    if role not in merged[page_id]["roles"]:
+                        merged[page_id]["roles"].append(role)
+
+        query_results.append({
+            "query": query,
+            "page_ids": page_ids,
+        })
+
+    return {
+        "query_results": query_results,
+        "results": list(merged.values()),
+        "max_hops": GRAPH_HOPS,
+    }
+
+
 def run_full_context(agent, question: str, model, instructions: str, prompt_template: str):
     """全資料を一括投入し、検索ツールを使わずに回答する。"""
     prompt = prompt_template.format(materials=get_all_materials(), question=question)

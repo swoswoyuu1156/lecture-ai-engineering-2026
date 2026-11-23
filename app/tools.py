@@ -111,6 +111,26 @@ def browse_tree(node_id: str | None = None) -> str:
         return json.dumps({"error": str(e)}, ensure_ascii=False)
 
 
+
+def search_graph_multi(queries: list[str]) -> str:
+    """2つの観点を別々にGraph検索し、結果を統合して返す。
+
+    queriesには、質問を構成する異なる2つの観点の検索語を指定する。
+    各観点の検索結果を重複排除し、根拠ページと検索元を返す。
+    """
+    import sqlite3
+    from google.genai.errors import APIError
+    from app.retrieval import search_graph_multi as search_multi
+
+    try:
+        return json.dumps(search_multi(queries), ensure_ascii=False)
+    except (ValueError, OSError, sqlite3.Error) as e:
+        return json.dumps({"error": str(e), "results": []}, ensure_ascii=False)
+    except APIError as e:
+        return json.dumps({"error": api_error_message(e.code), "results": []},
+                          ensure_ascii=False)
+
+
 def search_graph(query: str) -> str:
     """資料を検索し、前後ページ・共通用語をたどって関連ページの本文と引用情報を返す。
 
