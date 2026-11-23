@@ -25,16 +25,55 @@ def ask(question: str) -> str:
     client = genai.Client(api_key=get_api_key())
     response = client.models.generate_content(model=MODEL, contents=question)
 
-    # TODO(第1回 演習): response.usage_metadata から
-    #   入力トークン数と出力トークン数を表示してみよう（Copilotに頼んでよい）
+    usage = response.usage_metadata
+    if usage is not None:
+        print(f"[usage] input tokens: {usage.prompt_token_count}")
+        print(f"[usage] output tokens: {usage.candidates_token_count}")
 
     return response.text
+
+
+
+def day1_chat() -> None:
+    """同じChatセッションで会話履歴を保持する。"""
+    client = genai.Client(api_key=get_api_key())
+    chat = client.chats.create(model=MODEL)
+    print("[chat] 会話開始（exitで終了）")
+
+    while True:
+        try:
+            question = input("あなた> ").strip()
+        except (EOFError, KeyboardInterrupt):
+            print("\n会話終了")
+            break
+
+        if question.lower() in ("exit", "quit"):
+            print("会話終了")
+            break
+        if not question:
+            continue
+
+        try:
+            response = chat.send_message(question)
+        except errors.APIError as e:
+            print(api_error_message(e.code, e.message))
+            continue
+
+        print(f"[chat reply] {response.text}")
+        usage = response.usage_metadata
+        if usage is not None:
+            print(f"[usage] input tokens: {usage.prompt_token_count}")
+            print(f"[usage] output tokens: {usage.candidates_token_count}")
 
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="素のLLMに質問する")
     parser.add_argument("question", nargs="?", default=DEFAULT_QUESTION)
+    parser.add_argument("--chat", action="store_true", help="会話履歴を保持して連続質問する")
     args = parser.parse_args()
+    if args.chat:
+        day1_chat()
+        return
 
     print(f"[model] {MODEL}")
     print(f"[質問] {args.question}\n")
